@@ -9,10 +9,10 @@
     <!-- Google Font (Inter) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs (Compat version) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
     <style>
         :root {
@@ -55,22 +55,6 @@
         .search-container { width: 100%; position: relative; }
         .search-container i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
         .search-input { width: 100%; padding: 12px 12px 12px 40px; border-radius: var(--radius-md); border: none; font-size: 14px; outline: none; background: white; color: var(--text-main); cursor: pointer; }
-
-        /* Full Screen Search Overlay */
-        .search-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: white;
-            z-index: 999;
-            padding: 16px;
-            overflow-y: auto;
-        }
-        .search-overlay-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-        .search-back-btn { background: none; border: none; font-size: 20px; color: var(--text-main); cursor: pointer; }
-        .search-overlay-input-wrap { flex: 1; position: relative; display: flex; align-items: center; }
-        .search-overlay-input-wrap input { width: 100%; padding: 12px 40px 12px 16px; border: 2px solid var(--primary-color); border-radius: var(--radius-md); font-size: 15px; outline: none; }
-        .search-submit-btn { position: absolute; right: 10px; background: var(--primary-color); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
         /* App Screens */
         .app-screen { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
@@ -143,7 +127,7 @@
         </div>
         <div class="search-container">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="mainSearchTrigger" class="search-input" placeholder="Search..." readonly onclick="openSearchOverlay()">
+            <input type="text" id="mainSearchTrigger" class="search-input" placeholder="Search items..." readonly onclick="openSearchOverlay()">
         </div>
     </div>
 
@@ -304,7 +288,7 @@
         </div>
     </div>
 
-    <!-- Firebase Script -->
+    <!-- Firebase Script with Realtime DB Sync -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBWlQt-ypAL9CZD9VKpBBMus-W0a53FC0I",
@@ -321,7 +305,7 @@
             firebase.initializeApp(firebaseConfig);
         }
         const auth = firebase.auth();
-        const db = firebase.firestore();
+        const rtdb = firebase.database();
 
         const ADMIN_SECRET_CODE = "RZ777";
         let currentUserEmail = localStorage.getItem('gaon_user_email') || null;
@@ -395,7 +379,7 @@
                     <img src="${p.img}" alt="Product" class="product-img">
                     <h3 style="font-size: 16px; margin-bottom: 4px;">${p.name}</h3>
                     <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Category: ${p.category}</p>
-                    <div style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px;">Price: ₹${p.price} ${p.outOfStock ? '<span style="color:#ef4444; font-size:12px; margin-left:8px;">(Out of Stock)</span>' : ''}</div>
+                    <div style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px;">Price: ₹${p.price}${p.outOfStock ? '<span style="color:#ef4444; font-size:12px; margin-left:8px;">(Out of Stock)</span>' : ''}</div>
                     ${p.outOfStock ? '<button class="btn" style="background:#94a3b8; cursor:not-allowed;" disabled>Currently Unavailable</button>' : `<button onclick="handleOrderClick('${p.name}', '${p.price}', '${p.whatsapp}')" class="btn btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Order on WhatsApp</button>`}
                 `;
                 resultsGrid.appendChild(card);
@@ -502,7 +486,7 @@
                 changeTab('profile-screen');
                 return;
             }
-            window.open(`https://wa.me/${pWhatsapp}?text=Hello,%20mujhe%20yeh%20${encodeURIComponent(pName)}%20(Price:%20₹${pPrice})%20chahiye!`, '_blank');
+            window.open(`https://wa.me/${pWhatsapp}?text=Hello,%20mujhe%20yeh%20${encodeURIComponent(pName)}\%20(Price:\%20₹${pPrice})%20chahiye!`, '_blank');
         }
 
         function showAlert(title, desc, color) {
@@ -528,29 +512,24 @@
             renderProductGrid(allProductsCache);
         }
 
-        // Dual Sync: Cloud Database + Local Storage Cache for Instant Persistence
+        // Realtime Database Sync (Guaranteed persistence)
+        function fetchCloudProductsRealts() {}
         function fetchCloudProductsRealtime() {
-            // First load from local storage instantly so UI is never blank
-            let localSaved = JSON.parse(localStorage.getItem('gaon_persistent_products'));
-            if(localSaved && localSaved.length > 0) {
-                allProductsCache = localSaved;
-                renderProductGrid(allProductsCache);
-            }
-
-            // Then listen to cloud database in real-time
-            db.collection("village_products").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
-                let cloudItems = [];
-                snapshot.forEach((doc) => {
-                    cloudItems.push({ id: doc.id, ...doc.data() });
-                });
-                
-                if(cloudItems.length > 0) {
-                    allProductsCache = cloudItems;
-                    localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
+            let productsRef = rtdb.ref('village_products');
+            productsRef.on('value', (snapshot) => {
+                let data = snapshot.val();
+                let loadedItems = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        loadedItems.push({ id: key, ...data[key] });
+                    });
                 }
+                // Sort by newest first
+                loadedItems.sort((a, b) => b.createdAt - a.createdAt);
+                allProductsCache = loadedItems;
                 renderProductGrid(allProductsCache);
             }, (error) => {
-                console.log("Using offline cache:", error);
+                console.log("RTDB Error:", error);
             });
         }
 
@@ -596,9 +575,9 @@
                     <img src="${p.img}" alt="${p.name}" class="product-img" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
                     <h3 style="font-size: 16px; margin-bottom: 4px;">${p.name}</h3>
                     <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Category: ${p.category}</p>
-                    <div style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px;">Price: ₹${p.price} ${p.outOfStock ? '<span style="color:#ef4444; font-size:12px; margin-left:8px;">(Out of Stock)</span>' : ''}</div>
+                    <div style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px;">Price: ₹${p.price}${p.outOfStock ? '<span style="color:#ef4444; font-size:12px; margin-left:8px;">(Out of Stock)</span>' : ''}</div>
                     
-                    ${p.outOfStock ? '<button class="btn" style="background:#94a3b8; cursor:not-allowed;" disabled>Currently Unavailable</button>' : `<button onclick="handleOrderClick('${p.name}', '${p.price}', '${p.whatsapp}')" class="btn btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Order on WhatsApp</button>`}
+                    ${p.outOfStock ? '<button class="btn" style="background:#94a3b8; cursor:not-allowed;" disabled>Currently Unavailable</button>` : `<button onclick="handleOrderClick('${p.name}', '${p.price}', '${p.whatsapp}')" class="btn btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Order on WhatsApp</button>`}
 
                     ${sellerControlHTML}
                 `;
@@ -610,10 +589,7 @@
             let item = allProductsCache.find(p => p.id === id);
             if(item && item.ownerEmail === currentUserEmail) {
                 let newStatus = !item.outOfStock;
-                db.collection("village_products").doc(id).update({ outOfStock: newStatus }).then(() => {
-                    item.outOfStock = newStatus;
-                    localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
-                    renderProductGrid(allProductsCache);
+                rtdb.ref('village_products/' + id).update({ outOfStock: newStatus }).then(() => {
                     showAlert("Status Updated", newStatus ? "Product Out of Stock mark ho gaya hai." : "Product In Stock hai.", "var(--primary-color)");
                 });
             }
@@ -623,16 +599,8 @@
             let item = allProductsCache.find(p => p.id === id);
             if(item && item.ownerEmail === currentUserEmail) {
                 if(confirm("Kya aap sach mein apna ye product delete karna chahte hain?")) {
-                    db.collection("village_products").doc(id).delete().then(() => {
-                        allProductsCache = allProductsCache.filter(p => p.id !== id);
-                        localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
-                        renderProductGrid(allProductsCache);
+                    rtdb.ref('village_products/' + id).remove().then(() => {
                         showAlert("Deleted", "Aapka product delete ho gaya.", "#ef4444");
-                    }).catch(err => {
-                        // Fallback local delete if offline
-                        allProductsCache = allProductsCache.filter(p => p.id !== id);
-                        localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
-                        renderProductGrid(allProductsCache);
                     });
                 }
             }
@@ -666,9 +634,8 @@
             showAlert("Uploading...", "Product live ho raha hai...", "var(--primary-color)");
 
             reader.onload = function(e) {
-                let tempId = 'local_' + Date.now();
+                let newProdRef = rtdb.ref('village_products').push();
                 let newProd = { 
-                    id: tempId,
                     ownerEmail: currentUserEmail, 
                     name: name, 
                     category: category, 
@@ -679,34 +646,15 @@
                     createdAt: Date.now()
                 };
 
-                // Immediately add to local cache and display so it never disappears on refresh
-                allProductsCache.unshift(newProd);
-                localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
-                renderProductGrid(allProductsCache);
-
-                // Send to Firebase Cloud Database in background
-                db.collection("village_products").add({
-                    ownerEmail: currentUserEmail, 
-                    name: name, 
-                    category: category, 
-                    price: price, 
-                    img: e.target.result, 
-                    whatsapp: whatsapp, 
-                    outOfStock: false,
-                    createdAt: newProd.createdAt
-                }).then((docRef) => {
-                    // Update temp id with real firebase doc id
-                    newProd.id = docRef.id;
-                    localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
+                newProdRef.set(newProd).then(() => {
+                    showAlert("Success 🚀", "Aapka product live ho gaya!", "var(--primary-color)");
+                    document.getElementById('productName').value = '';
+                    document.getElementById('productPrice').value = '';
+                    document.getElementById('sellerWhatsApp').value = '';
+                    document.getElementById('productImageFile').value = '';
                 }).catch((err) => {
-                    console.log("Cloud sync saved locally.");
+                    showAlert("Error", "Upload fail ho gaya. Internet check karein.", "#ef4444");
                 });
-
-                showAlert("Success 🚀", "Aapka product live ho gaya!", "var(--primary-color)");
-                document.getElementById('productName').value = '';
-                document.getElementById('productPrice').value = '';
-                document.getElementById('sellerWhatsApp').value = '';
-                document.getElementById('productImageFile').value = '';
             };
 
             reader.readAsDataURL(file);
@@ -714,3 +662,4 @@
     </script>
 </body>
 </html>
+w
