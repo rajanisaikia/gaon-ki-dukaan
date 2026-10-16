@@ -9,16 +9,16 @@
     <!-- Google Font (Inter) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDKs (Compat version for web app) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
     <style>
         :root {
-            --primary-color: #0d8339; /* Blinkit Green */
+            --primary-color: #0d8339;
             --primary-hover: #0b6b2e;
-            --accent-yellow: #ffc107; /* Blinkit Yellow Logo */
+            --accent-yellow: #ffc107;
             --bg-color: #f8fafc;
             --surface-color: #ffffff;
             --text-main: #0f172a;
@@ -34,7 +34,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 80px; }
 
-        /* Blinkit Style Header */
+        /* App Header */
         .app-header {
             background-color: var(--primary-color);
             color: white;
@@ -51,7 +51,7 @@
         .logo { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: var(--accent-yellow); letter-spacing: -0.5px; }
         .role-indicator { background: rgba(255, 255, 255, 0.2); color: white; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600; text-transform: uppercase; }
         
-        /* Modern Search Input */
+        /* Search Bar */
         .search-container { width: 100%; position: relative; }
         .search-container i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
         .search-input { width: 100%; padding: 12px 12px 12px 40px; border-radius: var(--radius-md); border: none; font-size: 14px; outline: none; background: white; color: var(--text-main); cursor: pointer; }
@@ -72,7 +72,7 @@
         .search-overlay-input-wrap input { width: 100%; padding: 12px 40px 12px 16px; border: 2px solid var(--primary-color); border-radius: var(--radius-md); font-size: 15px; outline: none; }
         .search-submit-btn { position: absolute; right: 10px; background: var(--primary-color); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-        /* Screens */
+        /* App Screens */
         .app-screen { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
         .app-screen.active { display: block; }
 
@@ -89,9 +89,9 @@
         .card { background: var(--surface-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 14px; position: relative; }
         
         /* Product Image Styling */
-        .product-img { width: 100%; max-height: 350px; object-fit: contain; background-color: #000; border-radius: 8px; margin-bottom: 10px; }
+        .product-img { width: 100%; max-height: 380px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; background-color: #f1f5f9; }
 
-        /* Interactive Buttons */
+        /* Buttons */
         .btn { background: var(--primary-color); color: white; border: none; padding: 12px; font-weight: 600; border-radius: var(--radius-md); width: 100%; cursor: pointer; font-size: 14px; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; }
         .btn:hover { background: var(--primary-hover); }
         .btn-google { background: #4285f4; color: white; font-weight: 600; }
@@ -99,37 +99,38 @@
         .btn-whatsapp { background: var(--whatsapp-green); }
         .btn-whatsapp:hover { background: #1ebe5d; }
 
-        /* Seller Control Management Box inside Card */
+        /* Seller Control Management */
         .seller-controls { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: flex; gap: 8px; align-items: center; }
         .btn-stock { background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; flex: 1; }
         .btn-stock.out { background: #ef4444; }
-        .btn-delete-item { background: #64748b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .btn-delete-item { background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
 
-        /* Form Inputs */
+        /* Form Controls */
         .form-group { margin-bottom: 12px; }
         .form-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block; }
         .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 14px; outline: none; background: white; }
         .form-control:focus { border-color: var(--primary-color); }
 
-        /* Role Selector & Auth */
+        /* Auth Cards */
         .auth-card { background: white; padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); margin-bottom: 16px; }
         .role-selector-group { display: flex; gap: 8px; margin: 16px 0; background: var(--bg-color); padding: 4px; border-radius: var(--radius-md); }
         .role-option { cursor: pointer; padding: 10px; border-radius: 6px; font-weight: 600; font-size: 13px; flex: 1; text-align: center; color: var(--text-muted); transition: 0.2s; }
         .role-option.active { background: white; color: var(--primary-color); box-shadow: var(--shadow-sm); }
 
-        /* Bottom Fixed Navigation Bar */
+        /* Bottom Nav */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--surface-color); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 8px 0; z-index: 200; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); }
         .nav-item { text-align: center; font-size: 11px; color: var(--text-muted); cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 500; transition: 0.2s; }
         .nav-item.active { color: var(--primary-color); font-weight: 600; }
         .nav-icon { font-size: 18px; }
 
-        /* Status Alert Modal Popup */
+        /* Status Modal */
         .status-alert-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px); }
         .status-alert-box { background: white; padding: 24px; border-radius: var(--radius-lg); max-width: 320px; width: 100%; text-align: center; box-shadow: var(--shadow-md); }
         .status-title-large { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
         .status-desc-text { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
         
         .badge-owner { position: absolute; top: 20px; right: 20px; background: #e0e7ff; color: #4338ca; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+        .empty-feed-msg { text-align: center; padding: 40px 20px; background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-color); color: var(--text-muted); }
     </style>
 </head>
 <body>
@@ -146,12 +147,12 @@
         </div>
     </div>
 
-    <!-- Full Screen Search Overlay Dashboard -->
+    <!-- Full Screen Search Overlay -->
     <div class="search-overlay" id="searchOverlayDashboard">
         <div class="search-overlay-header">
             <button class="search-back-btn" onclick="closeSearchOverlay()"><i class="fa-solid fa-arrow-left"></i></button>
             <div class="search-overlay-input-wrap">
-                <input type="text" id="fullscreenSearchInput" placeholder="Search cakes, dresses, handicrafts..." onkeypress="handleSearchKeypress(event)">
+                <input type="text" id="fullscreenSearchInput" placeholder="Search items..." onkeypress="handleSearchKeypress(event)">
                 <button class="search-submit-btn" onclick="executeFullscreenSearch()"><i class="fa-solid fa-arrow-right"></i></button>
             </div>
         </div>
@@ -159,7 +160,7 @@
         <div class="grid" id="searchOverlayResultsGrid">
             <div style="text-align: center; padding: 40px; color: var(--text-muted);">
                 <i class="fa-solid fa-keyboard fa-2x" style="margin-bottom: 10px; opacity: 0.5;"></i>
-                <p>Type above and tap arrow button to search items.</p>
+                <p>Type above and tap arrow to search items.</p>
             </div>
         </div>
     </div>
@@ -187,8 +188,8 @@
 
         <!-- Seller Upload Form -->
         <div id="sellerUploadFormCard" style="display:none;" class="auth-card">
-            <h3 style="margin-bottom: 12px; color: var(--primary-color);"><i class="fa-solid fa-plus-circle"></i> Upload Product (Cloud Live)</h3>
-            <div class="form-group"><input type="text" id="productName" class="form-control" placeholder="Product Title (e.g. Woolen Bouquet)"></div>
+            <h3 style="margin-bottom: 12px; color: var(--primary-color);"><i class="fa-solid fa-plus-circle"></i> Upload Product (Live)</h3>
+            <div class="form-group"><input type="text" id="productName" class="form-control" placeholder="Product Title (e.g. Traditional Dress)"></div>
             <div class="form-group">
                 <select id="productCategory" class="form-control">
                     <option value="Handicraft">Handicraft</option>
@@ -205,7 +206,7 @@
             <button class="btn" onclick="uploadProductToCloudDatabase()">Publish Live Product</button>
         </div>
 
-        <div class="section-title"><i class="fa-solid fa-fire" style="color: var(--primary-color);"></i> Live Cloud Village Feed</div>
+        <div class="section-title"><i class="fa-solid fa-fire" style="color: var(--primary-color);"></i> Live Village Marketplace Feed</div>
         <div class="grid" id="productFeedGrid">
             <div id="loadingIndicator" style="text-align: center; padding: 20px; color: var(--text-muted);">
                 <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
@@ -220,15 +221,15 @@
         <div class="card" style="margin-bottom: 16px;">
             <h4 style="color: var(--primary-color); margin-bottom: 8px;"><i class="fa-solid fa-bag-shopping"></i> Customer Guide</h4>
             <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
-                1. <strong>Google Login:</strong> Profile tab mein jakar apne Google Account se Sign in karein.<br>
-                2. <strong>Browse & Order:</strong> Kisi bhi product ke niche 'Order on WhatsApp' button par click karke direct seller se deal fix karein.
+                1. <strong>Google Login:</strong> Profile tab mein jaakar Google Account se login karein.<br>
+                2. <strong>Order:</strong> Product ke niche 'Order on WhatsApp' dabakar direct seller se baat karein.
             </p>
         </div>
         <div class="card">
             <h4 style="color: var(--primary-color); margin-bottom: 8px;"><i class="fa-solid fa-store"></i> Seller Guide</h4>
             <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
-                1. <strong>Approval:</strong> Profile mein 'Request Approval on WhatsApp' dabayein aur Admin se Secret Code praapt karein.<br>
-                2. <strong>Management:</strong> Code daalkar Seller Mode unlock karein. Aap apne upload kiye products ko real-time mein manage aur delete kar sakte hain.
+                1. <strong>Seller Access:</strong> Admin se WhatsApp par Secret Code praapt karke Seller Mode unlock karein.<br>
+                2. <strong>Product Upload:</strong> Photo, Naama, Price aur WhatsApp number dalkar live bechein.
             </p>
         </div>
     </div>
@@ -237,11 +238,11 @@
     <div class="app-screen" id="profile-screen">
         <div class="section-title"><i class="fa-solid fa-user-gear"></i> Account Settings</div>
         
-        <!-- Google Authentication Login Box -->
+        <!-- Google Auth Login -->
         <div class="auth-card" id="authCardBox" style="text-align: center;">
             <i class="fa-brands fa-google fa-3x" style="color: #4285f4; margin-bottom: 12px;"></i>
             <h3 style="margin-bottom: 6px;">Sign in with Google</h3>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Global cloud marketplace access ke liye login zaroori hai.</p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Marketplace mein khareedne ya bechne ke liye login karein.</p>
             
             <button class="btn btn-google" onclick="triggerRealGoogleLogin()">
                 <i class="fa-brands fa-google"></i> Continue with Google
@@ -269,7 +270,7 @@
 
                 <div class="form-group">
                     <label class="form-label">Secret Seller Code:</label>
-                    <input type="password" id="secretCodeInput" class="form-control" placeholder="">
+                    <input type="password" id="secretCodeInput" class="form-control" placeholder="Enter code">
                 </div>
                 <button class="btn" onclick="verifyAndActivateSeller()">Activate Seller Access</button>
             </div>
@@ -287,7 +288,7 @@
         </div>
     </div>
 
-    <!-- Bottom Fixed Navigation Bar -->
+    <!-- Bottom Navigation Bar -->
     <div class="bottom-nav">
         <div class="nav-item active" id="nv-home" onclick="changeTab('home-screen')">
             <i class="fa-solid fa-house nav-icon"></i>
@@ -303,7 +304,7 @@
         </div>
     </div>
 
-    <!-- Firebase Logic with YOUR exact rlx-market credentials -->
+    <!-- Firebase Script -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBWlQt-ypAL9CZD9VKpBBMus-W0a53FC0I",
@@ -527,67 +528,19 @@
             renderProductGrid(allProductsCache);
         }
 
-        // Robust Realtime Firestore Database Connection with Fallback
+        // Clean Realtime Database Connection (No Mock/Fake Items)
         function fetchCloudProductsRealtime() {
             db.collection("village_products").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
                 let cloudItems = [];
                 snapshot.forEach((doc) => {
                     cloudItems.push({ id: doc.id, ...doc.data() });
                 });
-                
-                if(cloudItems.length > 0) {
-                    allProductsCache = cloudItems;
-                    localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
-                } else {
-                    // Fallback to local storage if empty
-                    let localSaved = JSON.parse(localStorage.getItem('gaon_local_products'));
-                    if(localSaved && localSaved.length > 0) {
-                        allProductsCache = localSaved;
-                    } else {
-                        loadDefaultMockProducts();
-                    }
-                }
+                allProductsCache = cloudItems;
                 renderProductGrid(allProductsCache);
             }, (error) => {
-                console.log("Firestore fallback active:", error);
-                let localSaved = JSON.parse(localStorage.getItem('gaon_local_products'));
-                if(localSaved && localSaved.length > 0) {
-                    allProductsCache = localSaved;
-                } else {
-                    loadDefaultMockProducts();
-                }
-                renderProductGrid(allProductsCache);
+                console.log("Firestore Fetch Error: ", error);
+                renderProductGrid([]);
             });
-        }
-
-        function loadDefaultMockProducts() {
-            let defaultItems = [
-                {
-                    id: "p1",
-                    ownerEmail: "artisan_demo@gmail.com",
-                    name: "Handmade Woolen Flower Bouquet 🌸",
-                    category: "Handicraft",
-                    price: "250",
-                    img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600&auto=format&fit=crop&q=80",
-                    whatsapp: "919876543210",
-                    outOfStock: false,
-                    createdAt: Date.now() - 10000
-                },
-                {
-                    id: "p2",
-                    ownerEmail: "baker_demo@gmail.com",
-                    name: "Fresh Chocolate Birthday Cake 🎂",
-                    category: "Cake",
-                    price: "400",
-                    img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80",
-                    whatsapp: "919876543210",
-                    outOfStock: false,
-                    createdAt: Date.now() - 5000
-                }
-            ];
-            allProductsCache = defaultItems;
-            localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
-            renderProductGrid(allProductsCache);
         }
 
         function renderProductGrid(products) {
@@ -597,14 +550,19 @@
             let filtered = products.filter(p => currentCategoryFilter === 'All' || p.category === currentCategoryFilter);
 
             if(filtered.length === 0) {
-                grid.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">No products found in this category.</div>`;
+                grid.innerHTML = `
+                    <div class="empty-feed-msg">
+                        <i class="fa-solid fa-store-slash fa-3x" style="color: var(--text-muted); margin-bottom: 12px; opacity: 0.5;"></i>
+                        <h4 style="margin-bottom: 6px; color: var(--text-main);">Abhi koi product live nahi hai</h4>
+                        <p style="font-size: 13px;">Seller Mode mein jakar pehla asli product upload karein!</p>
+                    </div>
+                `;
                 return;
             }
 
             filtered.forEach(p => {
                 let card = document.createElement('div');
                 card.className = 'card product-card';
-                card.setAttribute('data-category', p.category);
 
                 let isMyProduct = currentUserEmail && (p.ownerEmail === currentUserEmail);
 
@@ -624,7 +582,7 @@
 
                 card.innerHTML = `
                     ${isMyProduct ? '<span class="badge-owner">Your Product</span>' : ''}
-                    <img src="${p.img}" alt="Product" class="product-img">
+                    <img src="${p.img}" alt="${p.name}" class="product-img" onerror="this.src='https://via.placeholder.com/400x300?text=No+Image'">
                     <h3 style="font-size: 16px; margin-bottom: 4px;">${p.name}</h3>
                     <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Category: ${p.category}</p>
                     <div style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px;">Price: ₹${p.price} ${p.outOfStock ? '<span style="color:#ef4444; font-size:12px; margin-left:8px;">(Out of Stock)</span>' : ''}</div>
@@ -640,13 +598,10 @@
         function toggleStockStatus(id) {
             let item = allProductsCache.find(p => p.id === id);
             if(item && item.ownerEmail === currentUserEmail) {
-                item.outOfStock = !item.outOfStock;
-                try {
-                    db.collection("village_products").doc(id).update({ outOfStock: item.outOfStock });
-                } catch(e) {}
-                localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
-                renderProductGrid(allProductsCache);
-                showAlert("Status Updated", item.outOfStock ? "Product Out of Stock mark ho gaya hai." : "Product In Stock hai.", "var(--primary-color)");
+                let newStatus = !item.outOfStock;
+                db.collection("village_products").doc(id).update({ outOfStock: newStatus }).then(() => {
+                    showAlert("Status Updated", newStatus ? "Product Out of Stock mark ho gaya hai." : "Product In Stock hai.", "var(--primary-color)");
+                });
             }
         }
 
@@ -654,13 +609,9 @@
             let item = allProductsCache.find(p => p.id === id);
             if(item && item.ownerEmail === currentUserEmail) {
                 if(confirm("Kya aap sach mein apna ye product delete karna chahte hain?")) {
-                    try {
-                        db.collection("village_products").doc(id).delete();
-                    } catch(e) {}
-                    allProductsCache = allProductsCache.filter(p => p.id !== id);
-                    localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
-                    renderProductGrid(allProductsCache);
-                    showAlert("Deleted", "Aapka product delete ho gaya.", "#ef4444");
+                    db.collection("village_products").doc(id).delete().then(() => {
+                        showAlert("Deleted", "Aapka product delete ho gaya.", "#ef4444");
+                    });
                 }
             }
         }
@@ -682,49 +633,41 @@
                 return;
             }
 
-            if(imageInput.files && imageInput.files[0]) {
-                let reader = new FileReader();
-                reader.onload = function(e) {
-                    saveProductToCloud(name, category, price, e.target.result, whatsapp);
-                }
-                reader.readAsDataURL(imageInput.files[0]);
-            } else {
-                let defaultImg = "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&auto=format&fit=crop&q=80";
-                saveProductToCloud(name, category, price, defaultImg, whatsapp);
+            if(!imageInput.files || !imageInput.files[0]) {
+                showAlert("Error", "Kripya product ki photo select karein!", "#ef4444");
+                return;
             }
-        }
 
-        function saveProductToCloud(name, category, price, imgSrc, whatsapp) {
-            let newProdId = 'p_' + Date.now();
-            let newProd = { 
-                ownerEmail: currentUserEmail, 
-                name: name, 
-                category: category, 
-                price: price, 
-                img: imgSrc, 
-                whatsapp: whatsapp, 
-                outOfStock: false,
-                createdAt: Date.now()
+            // Convert image file to compressed Base64 format for high reliability
+            let file = imageInput.files[0];
+            let reader = new FileReader();
+            
+            showAlert("Uploading...", "Product upload ho raha hai, kripya 2 second rukein...", "var(--primary-color)");
+
+            reader.onload = function(e) {
+                let newProd = { 
+                    ownerEmail: currentUserEmail, 
+                    name: name, 
+                    category: category, 
+                    price: price, 
+                    img: e.target.result, 
+                    whatsapp: whatsapp, 
+                    outOfStock: false,
+                    createdAt: Date.now()
+                };
+
+                db.collection("village_products").add(newProd).then(() => {
+                    showAlert("Success 🚀", "Aapka product live ho gaya!", "var(--primary-color)");
+                    document.getElementById('productName').value = '';
+                    document.getElementById('productPrice').value = '';
+                    document.getElementById('sellerWhatsApp').value = '';
+                    document.getElementById('productImageFile').value = '';
+                }).catch((err) => {
+                    showAlert("Error", "Upload fail ho gaya. Internet check karein.", "#ef4444");
+                });
             };
 
-            // Save to Firestore Database
-            db.collection("village_products").add(newProd).then(() => {
-                console.log("Cloud sync successful");
-            }).catch((err) => {
-                console.log("Cloud sync error, saved locally", err);
-            });
-
-            // Immediately update local array and render so it never disappears
-            allProductsCache.unshift({ id: newProdId, ...newProd });
-            localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
-            renderProductGrid(allProductsCache);
-
-            showAlert("Success", "Aapka product poori duniya ke liye Live ho gaya hai!", "var(--primary-color)");
-
-            document.getElementById('productName').value = '';
-            document.getElementById('productPrice').value = '';
-            document.getElementById('sellerWhatsApp').value = '';
-            document.getElementById('productImageFile').value = '';
+            reader.readAsDataURL(file);
         }
     </script>
 </body>
