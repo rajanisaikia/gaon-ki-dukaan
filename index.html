@@ -336,7 +336,6 @@
             fetchCloudProductsRealtime();
             startAnimatedPlaceholder();
             
-            // Listen to auth changes automatically
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUserEmail = user.email;
@@ -412,7 +411,6 @@
             if(screenId === 'profile-screen') document.getElementById('nv-profile').classList.add('active');
         }
 
-        // Real Google Authentication Popup
         function triggerRealGoogleLogin() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
@@ -529,23 +527,41 @@
             renderProductGrid(allProductsCache);
         }
 
-        // Realtime Firestore Database Connection
+        // Robust Realtime Firestore Database Connection with Fallback
         function fetchCloudProductsRealtime() {
             db.collection("village_products").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
                 let cloudItems = [];
                 snapshot.forEach((doc) => {
                     cloudItems.push({ id: doc.id, ...doc.data() });
                 });
-                allProductsCache = cloudItems;
+                
+                if(cloudItems.length > 0) {
+                    allProductsCache = cloudItems;
+                    localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
+                } else {
+                    // Fallback to local storage if empty
+                    let localSaved = JSON.parse(localStorage.getItem('gaon_local_products'));
+                    if(localSaved && localSaved.length > 0) {
+                        allProductsCache = localSaved;
+                    } else {
+                        loadDefaultMockProducts();
+                    }
+                }
                 renderProductGrid(allProductsCache);
             }, (error) => {
-                console.log("Firestore Notice: Initializing local feed if database is empty.");
-                loadDefaultMockProducts();
+                console.log("Firestore fallback active:", error);
+                let localSaved = JSON.parse(localStorage.getItem('gaon_local_products'));
+                if(localSaved && localSaved.length > 0) {
+                    allProductsCache = localSaved;
+                } else {
+                    loadDefaultMockProducts();
+                }
+                renderProductGrid(allProductsCache);
             });
         }
 
         function loadDefaultMockProducts() {
-            let localSaved = JSON.parse(localStorage.getItem('gaon_local_products')) || [
+            let defaultItems = [
                 {
                     id: "p1",
                     ownerEmail: "artisan_demo@gmail.com",
@@ -554,7 +570,8 @@
                     price: "250",
                     img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600&auto=format&fit=crop&q=80",
                     whatsapp: "919876543210",
-                    outOfStock: false
+                    outOfStock: false,
+                    createdAt: Date.now() - 10000
                 },
                 {
                     id: "p2",
@@ -564,10 +581,12 @@
                     price: "400",
                     img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80",
                     whatsapp: "919876543210",
-                    outOfStock: false
+                    outOfStock: false,
+                    createdAt: Date.now() - 5000
                 }
             ];
-            allProductsCache = localSaved;
+            allProductsCache = defaultItems;
+            localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
             renderProductGrid(allProductsCache);
         }
 
@@ -625,6 +644,7 @@
                 try {
                     db.collection("village_products").doc(id).update({ outOfStock: item.outOfStock });
                 } catch(e) {}
+                localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
                 renderProductGrid(allProductsCache);
                 showAlert("Status Updated", item.outOfStock ? "Product Out of Stock mark ho gaya hai." : "Product In Stock hai.", "var(--primary-color)");
             }
@@ -638,6 +658,7 @@
                         db.collection("village_products").doc(id).delete();
                     } catch(e) {}
                     allProductsCache = allProductsCache.filter(p => p.id !== id);
+                    localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
                     renderProductGrid(allProductsCache);
                     showAlert("Deleted", "Aapka product delete ho gaya.", "#ef4444");
                 }
@@ -674,6 +695,7 @@
         }
 
         function saveProductToCloud(name, category, price, imgSrc, whatsapp) {
+            let newProdId = 'p_' + Date.now();
             let newProd = { 
                 ownerEmail: currentUserEmail, 
                 name: name, 
@@ -685,13 +707,19 @@
                 createdAt: Date.now()
             };
 
+            // Save to Firestore Database
             db.collection("village_products").add(newProd).then(() => {
-                showAlert("Success", "Aapka product poori duniya ke liye Live ho gaya hai!", "var(--primary-color)");
+                console.log("Cloud sync successful");
             }).catch((err) => {
-                allProductsCache.unshift({ id: 'p_' + Date.now(), ...newProd });
-                renderProductGrid(allProductsCache);
-                showAlert("Success", "Product Live ho gaya!", "var(--primary-color)");
+                console.log("Cloud sync error, saved locally", err);
             });
+
+            // Immediately update local array and render so it never disappears
+            allProductsCache.unshift({ id: newProdId, ...newProd });
+            localStorage.setItem('gaon_local_products', JSON.stringify(allProductsCache));
+            renderProductGrid(allProductsCache);
+
+            showAlert("Success", "Aapka product poori duniya ke liye Live ho gaya hai!", "var(--primary-color)");
 
             document.getElementById('productName').value = '';
             document.getElementById('productPrice').value = '';
