@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaon Ki Dukaan - Rural Artisans & Bakery Marketplace</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs (Compat version for web app) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #0d8339; /* Blinkit Green */
+            --primary-hover: #0b6b2e;
+            --accent-yellow: #ffc107; /* Blinkit Yellow Logo */
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --whatsapp-green: #25d366;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 80px; }
+
+        /* Blinkit Style Header */
+        .app-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 14px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: var(--shadow-md);
+        }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: var(--accent-yellow); letter-spacing: -0.5px; }
+        .role-indicator { background: rgba(255, 255, 255, 0.2); color: white; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600; text-transform: uppercase; }
+        
+        /* Modern Search Input */
+        .search-container { width: 100%; position: relative; }
+        .search-container i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+        .search-input { width: 100%; padding: 12px 12px 12px 40px; border-radius: var(--radius-md); border: none; font-size: 14px; outline: none; background: white; color: var(--text-main); cursor: pointer; }
+
+        /* Full Screen Search Overlay */
+        .search-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            z-index: 999;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        .search-overlay-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .search-back-btn { background: none; border: none; font-size: 20px; color: var(--text-main); cursor: pointer; }
+        .search-overlay-input-wrap { flex: 1; position: relative; display: flex; align-items: center; }
+        .search-overlay-input-wrap input { width: 100%; padding: 12px 40px 12px 16px; border: 2px solid var(--primary-color); border-radius: var(--radius-md); font-size: 15px; outline: none; }
+        .search-submit-btn { position: absolute; right: 10px; background: var(--primary-color); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        /* Screens */
+        .app-screen { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
+        .app-screen.active { display: block; }
+
+        /* Categories Bar */
+        .category-row { display: flex; justify-content: space-around; margin-bottom: 20px; background: var(--surface-color); padding: 12px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); overflow-x: auto; gap: 8px; }
+        .cat-item { text-align: center; font-size: 11px; font-weight: 500; color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; min-width: 70px; transition: 0.2s; }
+        .cat-icon-circle { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; background: var(--bg-color); color: var(--text-main); transition: all 0.2s ease; }
+        .cat-item.active { color: var(--primary-color); font-weight: 600; }
+        .cat-item.active .cat-icon-circle { background: #e8f5e9; color: var(--primary-color); transform: scale(1.05); }
+
+        /* Cards Layout */
+        .section-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .grid { display: flex; flex-direction: column; gap: 16px; }
+        .card { background: var(--surface-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); padding: 14px; position: relative; }
+        
+        /* Product Image Styling */
+        .product-img { width: 100%; max-height: 350px; object-fit: contain; background-color: #000; border-radius: 8px; margin-bottom: 10px; }
+
+        /* Interactive Buttons */
+        .btn { background: var(--primary-color); color: white; border: none; padding: 12px; font-weight: 600; border-radius: var(--radius-md); width: 100%; cursor: pointer; font-size: 14px; transition: background 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; }
+        .btn:hover { background: var(--primary-hover); }
+        .btn-google { background: #4285f4; color: white; font-weight: 600; }
+        .btn-google:hover { background: #3367d6; }
+        .btn-whatsapp { background: var(--whatsapp-green); }
+        .btn-whatsapp:hover { background: #1ebe5d; }
+
+        /* Seller Control Management Box inside Card */
+        .seller-controls { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: flex; gap: 8px; align-items: center; }
+        .btn-stock { background: #f59e0b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; flex: 1; }
+        .btn-stock.out { background: #ef4444; }
+        .btn-delete-item { background: #64748b; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+        /* Form Inputs */
+        .form-group { margin-bottom: 12px; }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: block; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 14px; outline: none; background: white; }
+        .form-control:focus { border-color: var(--primary-color); }
+
+        /* Role Selector & Auth */
+        .auth-card { background: white; padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); margin-bottom: 16px; }
+        .role-selector-group { display: flex; gap: 8px; margin: 16px 0; background: var(--bg-color); padding: 4px; border-radius: var(--radius-md); }
+        .role-option { cursor: pointer; padding: 10px; border-radius: 6px; font-weight: 600; font-size: 13px; flex: 1; text-align: center; color: var(--text-muted); transition: 0.2s; }
+        .role-option.active { background: white; color: var(--primary-color); box-shadow: var(--shadow-sm); }
+
+        /* Bottom Fixed Navigation Bar */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--surface-color); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 8px 0; z-index: 200; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); }
+        .nav-item { text-align: center; font-size: 11px; color: var(--text-muted); cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 500; transition: 0.2s; }
+        .nav-item.active { color: var(--primary-color); font-weight: 600; }
+        .nav-icon { font-size: 18px; }
+
+        /* Status Alert Modal Popup */
+        .status-alert-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px); }
+        .status-alert-box { background: white; padding: 24px; border-radius: var(--radius-lg); max-width: 320px; width: 100%; text-align: center; box-shadow: var(--shadow-md); }
+        .status-title-large { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .status-desc-text { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
+        
+        .badge-owner { position: absolute; top: 20px; right: 20px; background: #e0e7ff; color: #4338ca; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <div class="app-header">
+        <div class="header-top">
+            <div class="logo"><i class="fa-solid fa-store"></i> Gaon Ki Dukaan</div>
+            <span class="role-indicator" id="headerRoleBadge">GUEST</span>
+        </div>
+        <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="mainSearchTrigger" class="search-input" placeholder="Search..." readonly onclick="openSearchOverlay()">
+        </div>
+    </div>
+
+    <!-- Full Screen Search Overlay Dashboard -->
+    <div class="search-overlay" id="searchOverlayDashboard">
+        <div class="search-overlay-header">
+            <button class="search-back-btn" onclick="closeSearchOverlay()"><i class="fa-solid fa-arrow-left"></i></button>
+            <div class="search-overlay-input-wrap">
+                <input type="text" id="fullscreenSearchInput" placeholder="Search cakes, dresses, handicrafts..." onkeypress="handleSearchKeypress(event)">
+                <button class="search-submit-btn" onclick="executeFullscreenSearch()"><i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+        <div class="section-title"><i class="fa-solid fa-search"></i> Search Results</div>
+        <div class="grid" id="searchOverlayResultsGrid">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <i class="fa-solid fa-keyboard fa-2x" style="margin-bottom: 10px; opacity: 0.5;"></i>
+                <p>Type above and tap arrow button to search items.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Home Screen -->
+    <div class="app-screen active" id="home-screen">
+        <div class="category-row">
+            <div class="cat-item active" id="cat-all" onclick="selectCategory('All')">
+                <div class="cat-icon-circle"><i class="fa-solid fa-border-all"></i></div>
+                <span>All Items</span>
+            </div>
+            <div class="cat-item" id="cat-craft" onclick="selectCategory('Handicraft')">
+                <div class="cat-icon-circle"><i class="fa-solid fa-paintbrush"></i></div>
+                <span>Handicraft</span>
+            </div>
+            <div class="cat-item" id="cat-cake" onclick="selectCategory('Cake')">
+                <div class="cat-icon-circle"><i class="fa-solid fa-cake-candles"></i></div>
+                <span>Cakes</span>
+            </div>
+            <div class="cat-item" id="cat-dress" onclick="selectCategory('Dress')">
+                <div class="cat-icon-circle"><i class="fa-solid fa-shirt"></i></div>
+                <span>Dresses</span>
+            </div>
+        </div>
+
+        <!-- Seller Upload Form -->
+        <div id="sellerUploadFormCard" style="display:none;" class="auth-card">
+            <h3 style="margin-bottom: 12px; color: var(--primary-color);"><i class="fa-solid fa-plus-circle"></i> Upload Product (Cloud Live)</h3>
+            <div class="form-group"><input type="text" id="productName" class="form-control" placeholder="Product Title (e.g. Woolen Bouquet)"></div>
+            <div class="form-group">
+                <select id="productCategory" class="form-control">
+                    <option value="Handicraft">Handicraft</option>
+                    <option value="Cake">Cake & Bakery</option>
+                    <option value="Dress">Dress / Boutique</option>
+                </select>
+            </div>
+            <div class="form-group"><input type="number" id="productPrice" class="form-control" placeholder="Price (₹)"></div>
+            <div class="form-group">
+                <label class="form-label">Product Photo (From Gallery)</label>
+                <input type="file" id="productImageFile" class="form-control" accept="image/*">
+            </div>
+            <div class="form-group"><input type="text" id="sellerWhatsApp" class="form-control" placeholder="WhatsApp Number (e.g. 919876543210)"></div>
+            <button class="btn" onclick="uploadProductToCloudDatabase()">Publish Live Product</button>
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-fire" style="color: var(--primary-color);"></i> Live Cloud Village Feed</div>
+        <div class="grid" id="productFeedGrid">
+            <div id="loadingIndicator" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                <p style="margin-top: 8px;">Syncing with cloud database...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guide Screen -->
+    <div class="app-screen" id="order-screen">
+        <div class="section-title"><i class="fa-solid fa-book-open"></i> Platform Guide</div>
+        <div class="card" style="margin-bottom: 16px;">
+            <h4 style="color: var(--primary-color); margin-bottom: 8px;"><i class="fa-solid fa-bag-shopping"></i> Customer Guide</h4>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                1. <strong>Google Login:</strong> Profile tab mein jakar apne Google Account se Sign in karein.<br>
+                2. <strong>Browse & Order:</strong> Kisi bhi product ke niche 'Order on WhatsApp' button par click karke direct seller se deal fix karein.
+            </p>
+        </div>
+        <div class="card">
+            <h4 style="color: var(--primary-color); margin-bottom: 8px;"><i class="fa-solid fa-store"></i> Seller Guide</h4>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                1. <strong>Approval:</strong> Profile mein 'Request Approval on WhatsApp' dabayein aur Admin se Secret Code praapt karein.<br>
+                2. <strong>Management:</strong> Code daalkar Seller Mode unlock karein. Aap apne upload kiye products ko real-time mein manage aur delete kar sakte hain.
+            </p>
+        </div>
+    </div>
+
+    <!-- Profile / Auth Screen -->
+    <div class="app-screen" id="profile-screen">
+        <div class="section-title"><i class="fa-solid fa-user-gear"></i> Account Settings</div>
+        
+        <!-- Google Authentication Login Box -->
+        <div class="auth-card" id="authCardBox" style="text-align: center;">
+            <i class="fa-brands fa-google fa-3x" style="color: #4285f4; margin-bottom: 12px;"></i>
+            <h3 style="margin-bottom: 6px;">Sign in with Google</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Global cloud marketplace access ke liye login zaroori hai.</p>
+            
+            <button class="btn btn-google" onclick="triggerRealGoogleLogin()">
+                <i class="fa-brands fa-google"></i> Continue with Google
+            </button>
+        </div>
+
+        <!-- Logged In User Dashboard -->
+        <div class="auth-card" id="userProfileCard" style="display: none; text-align: center;">
+            <i class="fa-solid fa-user-circle fa-3x" style="color: var(--primary-color); margin-bottom: 10px;"></i>
+            <h3 id="loggedInUserEmail" style="margin-bottom: 4px;"></h3>
+            <p id="userRoleBadgeText" style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Customer Account</p>
+            
+            <div class="role-selector-group">
+                <div class="role-option active" id="mode-opt-customer" onclick="switchUserModeSelection('customer')">Customer Mode</div>
+                <div class="role-option" id="mode-opt-seller" onclick="switchUserModeSelection('seller')">Seller Mode</div>
+            </div>
+
+            <div id="sellerAccessContainer" style="display: none; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px; text-align: left;">
+                <h4 style="margin-bottom: 8px; color: var(--primary-color);">Become A Verified Seller</h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Admin se WhatsApp par baat karke Secret Code praapt karein.</p>
+                
+                <a href="https://wa.me/9181391953?text=Hello%20Admin!%20Mujhe%20Gaon%20Ki%20Dukaan%20par%20Seller%20banna%20hai.%20Please%20verify%20karein." target="_blank" class="btn btn-whatsapp" style="margin-bottom: 12px;">
+                    <i class="fa-brands fa-whatsapp"></i> Request Approval on WhatsApp
+                </a>
+
+                <div class="form-group">
+                    <label class="form-label">Secret Seller Code:</label>
+                    <input type="password" id="secretCodeInput" class="form-control" placeholder="">
+                </div>
+                <button class="btn" onclick="verifyAndActivateSeller()">Activate Seller Access</button>
+            </div>
+
+            <button class="btn" style="background: #ef4444; margin-top: 20px;" onclick="handleLogout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Modal Popup Alert -->
+    <div class="status-alert-overlay" id="statusBoxModalPopup">
+        <div class="status-alert-box">
+            <div class="status-title-large" id="statusModalHeader">SUCCESS</div>
+            <div class="status-desc-text" id="statusModalDesc">Action completed successfully.</div>
+            <button class="btn" onclick="closeModal()">OK, Understood</button>
+        </div>
+    </div>
+
+    <!-- Bottom Fixed Navigation Bar -->
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nv-home" onclick="changeTab('home-screen')">
+            <i class="fa-solid fa-house nav-icon"></i>
+            <span>Home</span>
+        </div>
+        <div class="nav-item" id="nv-orders" onclick="changeTab('order-screen')">
+            <i class="fa-solid fa-book-open nav-icon"></i>
+            <span>Guide</span>
+        </div>
+        <div class="nav-item" id="nv-profile" onclick="changeTab('profile-screen')">
+            <i class="fa-solid fa-user nav-icon"></i>
+            <span>Profile</span>
+        </div>
+    </div>
+
+    <!-- Firebase Logic with YOUR exact rlx-market credentials -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBWlQt-ypAL9CZD9VKpBBMus-W0a53FC0I",
+            authDomain: "rlx-market.firebaseapp.com",
+            databaseURL: "https://rlx-market-default-rtdb.firebaseio.com",
+            projectId: "rlx-market",
+            storageBucket: "rlx-market.firebasestorage.app",
+            messagingSenderId: "269190894781",
+            appId: "1:269190894781:web:a69f07144a3effd0d5d3d4",
+            measurementId: "G-LJ3E6HH240"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const ADMIN_SECRET_CODE = "RZ777";
+        let currentUserEmail = localStorage.getItem('gaon_user_email') || null;
+        let isVerifiedSeller = JSON.parse(localStorage.getItem('gaon_is_seller')) || false;
+        let currentActiveMode = localStorage.getItem('gaon_active_mode') || 'customer';
+        let allProductsCache = [];
+        let currentCategoryFilter = 'All';
+
+        const placeholders = ["Search cakes...", "Search dresses...", "Search handicrafts...", "Search local items..."];
+        let placeholderIndex = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchCloudProductsRealtime();
+            startAnimatedPlaceholder();
+            
+            // Listen to auth changes automatically
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUserEmail = user.email;
+                    localStorage.setItem('gaon_user_email', currentUserEmail);
+                } else {
+                    currentUserEmail = localStorage.getItem('gaon_user_email') || null;
+                }
+                updateProfileUI();
+            });
+        });
+
+        function startAnimatedPlaceholder() {
+            let trigger = document.getElementById('mainSearchTrigger');
+            setInterval(() => {
+                trigger.setAttribute('placeholder', placeholders[placeholderIndex]);
+                placeholderIndex = (placeholderIndex + 1) % placeholders.length;
+            }, 2500);
+        }
+
+        function openSearchOverlay() {
+            document.getElementById('searchOverlayDashboard').style.display = 'block';
+            document.getElementById('fullscreenSearchInput').focus();
+        }
+
+        function closeSearchOverlay() {
+            document.getElementById('searchOverlayDashboard').style.display = 'none';
+            document.getElementById('fullscreenSearchInput').blur();
+        }
+
+        function handleSearchKeypress(event) {
+            if (event.key === 'Enter') executeFullscreenSearch();
+        }
+
+        function executeFullscreenSearch() {
+            let query = document.getElementById('fullscreenSearchInput').value.toLowerCase().trim();
+            let resultsGrid = document.getElementById('searchOverlayResultsGrid');
+            resultsGrid.innerHTML = '';
+            document.getElementById('fullscreenSearchInput').blur();
+
+            if(!query) {
+                resultsGrid.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted);">Type a keyword to search.</div>`;
+                return;
+            }
+
+            let matches = allProductsCache.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query));
+
+            if(matches.length === 0) {
+                resultsGrid.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted);">No items found matching "${query}".</div>`;
+                return;
+            }
+
+            matches.forEach((p) => {
+                let card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <img src="${p.img}" alt="Product" class="product-img">
+                    <h3 style="font-size: 16px; margin-bottom: 4px;">${p.name}</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Category: ${p.category}</p>
+                    <div style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px;">Price: ₹${p.price} ${p.outOfStock ? '<span style="color:#ef4444; font-size:12px; margin-left:8px;">(Out of Stock)</span>' : ''}</div>
+                    ${p.outOfStock ? '<button class="btn" style="background:#94a3b8; cursor:not-allowed;" disabled>Currently Unavailable</button>' : `<button onclick="handleOrderClick('${p.name}', '${p.price}', '${p.whatsapp}')" class="btn btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Order on WhatsApp</button>`}
+                `;
+                resultsGrid.appendChild(card);
+            });
+        }
+
+        function changeTab(screenId) {
+            document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if(screenId === 'home-screen') document.getElementById('nv-home').classList.add('active');
+            if(screenId === 'order-screen') document.getElementById('nv-orders').classList.add('active');
+            if(screenId === 'profile-screen') document.getElementById('nv-profile').classList.add('active');
+        }
+
+        // Real Google Authentication Popup
+        function triggerRealGoogleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+            .then((result) => {
+                currentUserEmail = result.user.email;
+                localStorage.setItem('gaon_user_email', currentUserEmail);
+                updateProfileUI();
+                showAlert("Google Sign-In", `Successfully logged in as ${currentUserEmail}!`, "var(--primary-color)");
+            })
+            .catch((error) => {
+                console.error(error);
+                showAlert("Google Auth", "Please ensure Google Sign-In is enabled in Firebase Console.", "#ef4444");
+            });
+        }
+
+        function switchUserModeSelection(mode) {
+            currentActiveMode = mode;
+            localStorage.setItem('gaon_active_mode', mode);
+            document.querySelectorAll('.role-option').forEach(el => el.classList.remove('active'));
+            
+            if(mode === 'customer') {
+                document.getElementById('mode-opt-customer').classList.add('active');
+                document.getElementById('sellerAccessContainer').style.display = 'none';
+                document.getElementById('sellerUploadFormCard').style.display = 'none';
+                document.getElementById('headerRoleBadge').innerText = "CUSTOMER";
+                document.getElementById('userRoleBadgeText').innerText = "CUSTOMER MODE ACTIVE";
+            } else {
+                document.getElementById('mode-opt-seller').classList.add('active');
+                if(isVerifiedSeller) {
+                    document.getElementById('sellerAccessContainer').style.display = 'none';
+                    document.getElementById('sellerUploadFormCard').style.display = 'block';
+                    document.getElementById('headerRoleBadge').innerText = "SELLER";
+                    document.getElementById('userRoleBadgeText').innerText = "VERIFIED SELLER MODE ACTIVE 🌟";
+                } else {
+                    document.getElementById('sellerAccessContainer').style.display = 'block';
+                    document.getElementById('sellerUploadFormCard').style.display = 'none';
+                    document.getElementById('headerRoleBadge').innerText = "CUSTOMER";
+                    document.getElementById('userRoleBadgeText').innerText = "SELLER APPROVAL REQUIRED";
+                }
+            }
+            renderProductGrid(allProductsCache);
+        }
+
+        function verifyAndActivateSeller() {
+            let code = document.getElementById('secretCodeInput').value.trim();
+            if(code === ADMIN_SECRET_CODE) {
+                isVerifiedSeller = true;
+                localStorage.setItem('gaon_is_seller', 'true');
+                switchUserModeSelection('seller');
+                showAlert("Access Granted", "Verified Seller Access activated successfully!", "var(--primary-color)");
+                document.getElementById('secretCodeInput').value = '';
+            } else {
+                showAlert("Invalid Code", "Incorrect secret code. Contact Admin on WhatsApp.", "#ef4444");
+            }
+        }
+
+        function updateProfileUI() {
+            if(currentUserEmail) {
+                document.getElementById('authCardBox').style.display = 'none';
+                document.getElementById('userProfileCard').style.display = 'block';
+                document.getElementById('loggedInUserEmail').innerText = currentUserEmail;
+                switchUserModeSelection(currentActiveMode);
+            } else {
+                document.getElementById('authCardBox').style.display = 'block';
+                document.getElementById('userProfileCard').style.display = 'none';
+                document.getElementById('headerRoleBadge').innerText = "GUEST";
+                document.getElementById('sellerUploadFormCard').style.display = 'none';
+            }
+        }
+
+        function handleLogout() {
+            auth.signOut().then(() => {
+                localStorage.removeItem('gaon_user_email');
+                localStorage.removeItem('gaon_is_seller');
+                localStorage.removeItem('gaon_active_mode');
+                currentUserEmail = null;
+                isVerifiedSeller = false;
+                currentActiveMode = 'customer';
+                updateProfileUI();
+                renderProductGrid(allProductsCache);
+                showAlert("Logged Out", "You have been logged out.", "var(--primary-color)");
+            });
+        }
+
+        function handleOrderClick(pName, pPrice, pWhatsapp) {
+            if(!currentUserEmail) {
+                showAlert("Login Required", "Order karne se pehle Google se login karna zaroori hai!", "#ef4444");
+                changeTab('profile-screen');
+                return;
+            }
+            window.open(`https://wa.me/${pWhatsapp}?text=Hello,%20mujhe%20yeh%20${encodeURIComponent(pName)}%20(Price:%20₹${pPrice})%20chahiye!`, '_blank');
+        }
+
+        function showAlert(title, desc, color) {
+            let header = document.getElementById('statusModalHeader');
+            header.innerText = title;
+            header.style.color = color || '#0f172a';
+            document.getElementById('statusModalDesc').innerText = desc;
+            document.getElementById('statusBoxModalPopup').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('statusBoxModalPopup').style.display = 'none';
+        }
+
+        function selectCategory(cat) {
+            currentCategoryFilter = cat;
+            document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('active'));
+            if(cat === 'All') document.getElementById('cat-all').classList.add('active');
+            if(cat === 'Handicraft') document.getElementById('cat-craft').classList.add('active');
+            if(cat === 'Cake') document.getElementById('cat-cake').classList.add('active');
+            if(cat === 'Dress') document.getElementById('cat-dress').classList.add('active');
+
+            renderProductGrid(allProductsCache);
+        }
+
+        // Realtime Firestore Database Connection
+        function fetchCloudProductsRealtime() {
+            db.collection("village_products").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+                let cloudItems = [];
+                snapshot.forEach((doc) => {
+                    cloudItems.push({ id: doc.id, ...doc.data() });
+                });
+                allProductsCache = cloudItems;
+                renderProductGrid(allProductsCache);
+            }, (error) => {
+                console.log("Firestore Notice: Initializing local feed if database is empty.");
+                loadDefaultMockProducts();
+            });
+        }
+
+        function loadDefaultMockProducts() {
+            let localSaved = JSON.parse(localStorage.getItem('gaon_local_products')) || [
+                {
+                    id: "p1",
+                    ownerEmail: "artisan_demo@gmail.com",
+                    name: "Handmade Woolen Flower Bouquet 🌸",
+                    category: "Handicraft",
+                    price: "250",
+                    img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600&auto=format&fit=crop&q=80",
+                    whatsapp: "919876543210",
+                    outOfStock: false
+                },
+                {
+                    id: "p2",
+                    ownerEmail: "baker_demo@gmail.com",
+                    name: "Fresh Chocolate Birthday Cake 🎂",
+                    category: "Cake",
+                    price: "400",
+                    img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80",
+                    whatsapp: "919876543210",
+                    outOfStock: false
+                }
+            ];
+            allProductsCache = localSaved;
+            renderProductGrid(allProductsCache);
+        }
+
+        function renderProductGrid(products) {
+            let grid = document.getElementById('productFeedGrid');
+            grid.innerHTML = '';
+
+            let filtered = products.filter(p => currentCategoryFilter === 'All' || p.category === currentCategoryFilter);
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">No products found in this category.</div>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                let card = document.createElement('div');
+                card.className = 'card product-card';
+                card.setAttribute('data-category', p.category);
+
+                let isMyProduct = currentUserEmail && (p.ownerEmail === currentUserEmail);
+
+                let sellerControlHTML = '';
+                if(isVerifiedSeller && isMyProduct && currentActiveMode === 'seller') {
+                    sellerControlHTML = `
+                        <div class="seller-controls">
+                            <button class="btn-stock ${p.outOfStock ? 'out' : ''}" onclick="toggleStockStatus('${p.id}')">
+                                ${p.outOfStock ? '🔴 Out of Stock' : '🟢 In Stock'}
+                            </button>
+                            <button class="btn-delete-item" onclick="deleteProductItem('${p.id}')">
+                                <i class="fa-solid fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    ${isMyProduct ? '<span class="badge-owner">Your Product</span>' : ''}
+                    <img src="${p.img}" alt="Product" class="product-img">
+                    <h3 style="font-size: 16px; margin-bottom: 4px;">${p.name}</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Category: ${p.category}</p>
+                    <div style="font-weight: 700; color: var(--primary-color); margin-bottom: 10px;">Price: ₹${p.price} ${p.outOfStock ? '<span style="color:#ef4444; font-size:12px; margin-left:8px;">(Out of Stock)</span>' : ''}</div>
+                    
+                    ${p.outOfStock ? '<button class="btn" style="background:#94a3b8; cursor:not-allowed;" disabled>Currently Unavailable</button>' : `<button onclick="handleOrderClick('${p.name}', '${p.price}', '${p.whatsapp}')" class="btn btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Order on WhatsApp</button>`}
+
+                    ${sellerControlHTML}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleStockStatus(id) {
+            let item = allProductsCache.find(p => p.id === id);
+            if(item && item.ownerEmail === currentUserEmail) {
+                item.outOfStock = !item.outOfStock;
+                try {
+                    db.collection("village_products").doc(id).update({ outOfStock: item.outOfStock });
+                } catch(e) {}
+                renderProductGrid(allProductsCache);
+                showAlert("Status Updated", item.outOfStock ? "Product Out of Stock mark ho gaya hai." : "Product In Stock hai.", "var(--primary-color)");
+            }
+        }
+
+        function deleteProductItem(id) {
+            let item = allProductsCache.find(p => p.id === id);
+            if(item && item.ownerEmail === currentUserEmail) {
+                if(confirm("Kya aap sach mein apna ye product delete karna chahte hain?")) {
+                    try {
+                        db.collection("village_products").doc(id).delete();
+                    } catch(e) {}
+                    allProductsCache = allProductsCache.filter(p => p.id !== id);
+                    renderProductGrid(allProductsCache);
+                    showAlert("Deleted", "Aapka product delete ho gaya.", "#ef4444");
+                }
+            }
+        }
+
+        function uploadProductToCloudDatabase() {
+            if(!currentUserEmail || !isVerifiedSeller) {
+                showAlert("Access Denied", "Sirf Verified Sellers hi products upload kar sakte hain!", "#ef4444");
+                return;
+            }
+
+            let name = document.getElementById('productName').value.trim();
+            let category = document.getElementById('productCategory').value;
+            let price = document.getElementById('productPrice').value.trim();
+            let whatsapp = document.getElementById('sellerWhatsApp').value.trim();
+            let imageInput = document.getElementById('productImageFile');
+
+            if(!name || !price || !whatsapp) {
+                showAlert("Error", "Kripya naam, price aur WhatsApp number bharein!", "#ef4444");
+                return;
+            }
+
+            if(imageInput.files && imageInput.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    saveProductToCloud(name, category, price, e.target.result, whatsapp);
+                }
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
+                let defaultImg = "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&auto=format&fit=crop&q=80";
+                saveProductToCloud(name, category, price, defaultImg, whatsapp);
+            }
+        }
+
+        function saveProductToCloud(name, category, price, imgSrc, whatsapp) {
+            let newProd = { 
+                ownerEmail: currentUserEmail, 
+                name: name, 
+                category: category, 
+                price: price, 
+                img: imgSrc, 
+                whatsapp: whatsapp, 
+                outOfStock: false,
+                createdAt: Date.now()
+            };
+
+            db.collection("village_products").add(newProd).then(() => {
+                showAlert("Success", "Aapka product poori duniya ke liye Live ho gaya hai!", "var(--primary-color)");
+            }).catch((err) => {
+                allProductsCache.unshift({ id: 'p_' + Date.now(), ...newProd });
+                renderProductGrid(allProductsCache);
+                showAlert("Success", "Product Live ho gaya!", "var(--primary-color)");
+            });
+
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('sellerWhatsApp').value = '';
+            document.getElementById('productImageFile').value = '';
+        }
+    </script>
+</body>
+</html>
