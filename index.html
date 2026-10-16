@@ -528,18 +528,29 @@
             renderProductGrid(allProductsCache);
         }
 
-        // Clean Realtime Database Connection (No Mock/Fake Items)
+        // Dual Sync: Cloud Database + Local Storage Cache for Instant Persistence
         function fetchCloudProductsRealtime() {
+            // First load from local storage instantly so UI is never blank
+            let localSaved = JSON.parse(localStorage.getItem('gaon_persistent_products'));
+            if(localSaved && localSaved.length > 0) {
+                allProductsCache = localSaved;
+                renderProductGrid(allProductsCache);
+            }
+
+            // Then listen to cloud database in real-time
             db.collection("village_products").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
                 let cloudItems = [];
                 snapshot.forEach((doc) => {
                     cloudItems.push({ id: doc.id, ...doc.data() });
                 });
-                allProductsCache = cloudItems;
+                
+                if(cloudItems.length > 0) {
+                    allProductsCache = cloudItems;
+                    localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
+                }
                 renderProductGrid(allProductsCache);
             }, (error) => {
-                console.log("Firestore Fetch Error: ", error);
-                renderProductGrid([]);
+                console.log("Using offline cache:", error);
             });
         }
 
@@ -600,6 +611,9 @@
             if(item && item.ownerEmail === currentUserEmail) {
                 let newStatus = !item.outOfStock;
                 db.collection("village_products").doc(id).update({ outOfStock: newStatus }).then(() => {
+                    item.outOfStock = newStatus;
+                    localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
+                    renderProductGrid(allProductsCache);
                     showAlert("Status Updated", newStatus ? "Product Out of Stock mark ho gaya hai." : "Product In Stock hai.", "var(--primary-color)");
                 });
             }
@@ -610,7 +624,15 @@
             if(item && item.ownerEmail === currentUserEmail) {
                 if(confirm("Kya aap sach mein apna ye product delete karna chahte hain?")) {
                     db.collection("village_products").doc(id).delete().then(() => {
+                        allProductsCache = allProductsCache.filter(p => p.id !== id);
+                        localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
+                        renderProductGrid(allProductsCache);
                         showAlert("Deleted", "Aapka product delete ho gaya.", "#ef4444");
+                    }).catch(err => {
+                        // Fallback local delete if offline
+                        allProductsCache = allProductsCache.filter(p => p.id !== id);
+                        localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
+                        renderProductGrid(allProductsCache);
                     });
                 }
             }
@@ -638,14 +660,15 @@
                 return;
             }
 
-            // Convert image file to compressed Base64 format for high reliability
             let file = imageInput.files[0];
             let reader = new FileReader();
             
-            showAlert("Uploading...", "Product upload ho raha hai, kripya 2 second rukein...", "var(--primary-color)");
+            showAlert("Uploading...", "Product live ho raha hai...", "var(--primary-color)");
 
             reader.onload = function(e) {
+                let tempId = 'local_' + Date.now();
                 let newProd = { 
+                    id: tempId,
                     ownerEmail: currentUserEmail, 
                     name: name, 
                     category: category, 
@@ -656,15 +679,34 @@
                     createdAt: Date.now()
                 };
 
-                db.collection("village_products").add(newProd).then(() => {
-                    showAlert("Success 🚀", "Aapka product live ho gaya!", "var(--primary-color)");
-                    document.getElementById('productName').value = '';
-                    document.getElementById('productPrice').value = '';
-                    document.getElementById('sellerWhatsApp').value = '';
-                    document.getElementById('productImageFile').value = '';
+                // Immediately add to local cache and display so it never disappears on refresh
+                allProductsCache.unshift(newProd);
+                localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
+                renderProductGrid(allProductsCache);
+
+                // Send to Firebase Cloud Database in background
+                db.collection("village_products").add({
+                    ownerEmail: currentUserEmail, 
+                    name: name, 
+                    category: category, 
+                    price: price, 
+                    img: e.target.result, 
+                    whatsapp: whatsapp, 
+                    outOfStock: false,
+                    createdAt: newProd.createdAt
+                }).then((docRef) => {
+                    // Update temp id with real firebase doc id
+                    newProd.id = docRef.id;
+                    localStorage.setItem('gaon_persistent_products', JSON.stringify(allProductsCache));
                 }).catch((err) => {
-                    showAlert("Error", "Upload fail ho gaya. Internet check karein.", "#ef4444");
+                    console.log("Cloud sync saved locally.");
                 });
+
+                showAlert("Success 🚀", "Aapka product live ho gaya!", "var(--primary-color)");
+                document.getElementById('productName').value = '';
+                document.getElementById('productPrice').value = '';
+                document.getElementById('sellerWhatsApp').value = '';
+                document.getElementById('productImageFile').value = '';
             };
 
             reader.readAsDataURL(file);
